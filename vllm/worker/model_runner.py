@@ -1776,6 +1776,20 @@ class ModelRunner(GPUModelRunnerBase[ModelInputForGPUWithSamplingMetadata]):
             logits=logits,
             sampling_metadata=model_input.sampling_metadata,
         )
+
+        import pickle
+        from datetime import datetime
+        current_time = datetime.now()
+        mm = current_time.strftime("%M")
+        ss = current_time.strftime("%S")
+        output_token = output.outputs
+        assert len(output_token) == 1
+        output_token = output_token[0].samples
+        assert len(output_token) == 1
+        output_token = output_token[0].output_token
+        with open(f'/mlp/tmp_output/{mm}_{ss}_output.pkl', 'wb') as f:
+            pickle.dump(output_token, f)
+
         if (self.observability_config is not None
                 and self.observability_config.collect_model_forward_time
                 and output is not None):

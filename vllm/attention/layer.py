@@ -336,6 +336,39 @@ def unified_attention_with_output(
     attn_metadata = forward_context.attn_metadata
     self = forward_context.attn_layers[layer_name]
     kv_cache = self.kv_cache[forward_context.virtual_engine]
+
+    import pickle
+    from datetime import datetime
+    current_time = datetime.now()
+    mm = current_time.strftime("%M")
+    ss = current_time.strftime("%S")
+    device = query.device
+    num_kv_heads = key.shape[1]
+    head_size = key.shape[2]
+    last_query = query[-1:]  # [1, num_heads, head_size]
+    num_heads = last_query.shape[1]
+    if kv_cache.numel() > 0:  # Non-empty cache
+        # Reshape cache: [num_blocks, block_size, num_kv_heads, head_size]
+        # -> [total_cached_tokens, num_kv_heads, head_size]
+        cached_keys = kv_cache[0].reshape(-1, num_kv_heads, head_size)
+    else:
+        cached_keys = torch.empty(0, num_kv_heads, head_size, device=device)
+    all_keys = torch.cat([cached_keys, key], dim=0)
+    all_keys = all_keys[:1112, ...]  # hard code 1112 tokens for gov-id, we need to get this number somewhere in the real implementation
+    if num_kv_heads < num_heads:  # num_heads = last_query.shape[1]
+        repeat_factor = num_heads // num_kv_heads
+        all_keys = all_keys.repeat_interleave(repeat_factor, dim=1)  # [total_tokens, num_heads, head_size]
+    last_query = last_query.to(torch.float32) #[1, 28, 128]
+    all_keys = all_keys.to(torch.float32) #[16385, 28, 128]
+    scores = (torch.bmm(last_query.transpose(0, 1), all_keys.permute(1, 2, 0)) / (head_size ** 0.5)).transpose(0, 1) #[num_heads, 1, total_tokens]
+    attn_weights = torch.softmax(scores, dim=-1)  # [1, num_heads, total_tokens]
+    attn_weights = attn_weights.squeeze(0)
+    attn_weights = attn_weights.mean(dim=0)
+    #if torch.cuda.is_available():
+    #    torch.cuda.empty_cache()
+    with open(f'/mlp/tmp_output/{mm}_{ss}_attn_weights.pkl', 'wb') as f:
+        pickle.dump(attn_weights, f)
+
     self.impl.forward(self,
                       query,
                       key,
