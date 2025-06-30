@@ -66,6 +66,8 @@ if TYPE_CHECKING:
 logger = init_logger(__name__)
 
 GLOBAL_QUERY_SEQUENCE_BUFFER = []
+GLOBAL_KV_CACHE_BUFFER = None
+GLOBAL_KV_CACHE_BUCKET_BUFFER = None
 
 def clean_global_query_sequence_buffer():
     global GLOBAL_QUERY_SEQUENCE_BUFFER
@@ -1673,6 +1675,8 @@ class ModelRunner(GPUModelRunnerBase[ModelInputForGPUWithSamplingMetadata]):
         num_steps: int = 1,
         **kwargs,
     ) -> Optional[Union[List[SamplerOutput], IntermediateTensors]]:
+        global GLOBAL_KV_CACHE_BUFFER
+        GLOBAL_KV_CACHE_BUFFER = kv_caches
         if num_steps > 1:
             raise ValueError("num_steps > 1 is not supported in ModelRunner")
 
