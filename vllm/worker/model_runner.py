@@ -1677,6 +1677,7 @@ class ModelRunner(GPUModelRunnerBase[ModelInputForGPUWithSamplingMetadata]):
         **kwargs,
     ) -> Optional[Union[List[SamplerOutput], IntermediateTensors]]:
         global GLOBAL_KV_CACHE_BUFFER
+        global GLOBAL_KV_CACHE_METADATA_BUFFER
         GLOBAL_KV_CACHE_BUFFER = kv_caches
         GLOBAL_KV_CACHE_METADATA_BUFFER = model_input.attn_metadata
         if num_steps > 1:
