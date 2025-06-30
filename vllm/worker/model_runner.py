@@ -69,7 +69,7 @@ GLOBAL_QUERY_SEQUENCE_BUFFER = []
 
 def clean_global_query_sequence_buffer():
     global GLOBAL_QUERY_SEQUENCE_BUFFER
-    GLOBAL_QUERY_SEQUENCE_BUFFER = []
+    GLOBAL_QUERY_SEQUENCE_BUFFER.clear()
 
 
 def get_global_query_sequence_buffer():
