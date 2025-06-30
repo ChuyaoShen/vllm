@@ -60,6 +60,16 @@ from .utils import (AutoWeightsLoader, PPMissingLayer, WeightsMapper,
 
 logger = init_logger(__name__)
 
+GLOBAL_QUERY_BUFFER = [
+    torch.nn.Parameter(torch.zeros(1, 3584, dtype=torch.bfloat16), requires_grad=False)
+    for i in range(28)
+]
+
+def get_global_query_buffer():
+    global GLOBAL_QUERY_BUFFER
+    return [buffer.data.clone() for buffer in GLOBAL_QUERY_BUFFER]
+
+
 
 class Qwen2MLP(nn.Module):
 
@@ -176,7 +186,7 @@ class Qwen2Attention(nn.Module):
         q, k = self.rotary_emb(positions, q, k)
         attn_output = self.attn(q, k, v)
         output, _ = self.o_proj(attn_output)
-        return output
+        return output, q[-1:, :]
 
 
 class Qwen2DecoderLayer(nn.Module):
@@ -240,7 +250,7 @@ class Qwen2DecoderLayer(nn.Module):
         else:
             hidden_states, residual = self.input_layernorm(
                 hidden_states, residual)
-        hidden_states = self.self_attn(
+        hidden_states, q = self.self_attn(
             positions=positions,
             hidden_states=hidden_states,
         )
@@ -249,7 +259,7 @@ class Qwen2DecoderLayer(nn.Module):
         hidden_states, residual = self.post_attention_layernorm(
             hidden_states, residual)
         hidden_states = self.mlp(hidden_states)
-        return hidden_states, residual
+        return hidden_states, residual, q
 
 
 @support_torch_compile(
@@ -334,12 +344,15 @@ class Qwen2Model(nn.Module):
             assert intermediate_tensors is not None
             hidden_states = intermediate_tensors["hidden_states"]
             residual = intermediate_tensors["residual"]
-        for layer in self.layers[self.start_layer:self.end_layer]:
-            hidden_states, residual = layer(
+        for i, layer in enumerate(self.layers[self.start_layer:self.end_layer]):
+            hidden_states, residual, q = layer(
                 positions,
                 hidden_states,
                 residual,
             )
+            with torch.no_grad():
+                GLOBAL_QUERY_BUFFER[i].copy_(q)
+
         if not get_pp_group().is_last_rank:
             return IntermediateTensors({
                 "hidden_states": hidden_states,
