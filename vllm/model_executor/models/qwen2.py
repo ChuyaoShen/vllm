@@ -186,7 +186,7 @@ class Qwen2Attention(nn.Module):
         q, k = self.rotary_emb(positions, q, k)
         attn_output = self.attn(q, k, v)
         output, _ = self.o_proj(attn_output)
-        return output, q[-1:, :]
+        return output, q[-1:, ...]
 
 
 class Qwen2DecoderLayer(nn.Module):
