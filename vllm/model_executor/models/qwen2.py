@@ -351,7 +351,7 @@ class Qwen2Model(nn.Module):
                 residual,
             )
             with torch.no_grad():
-                GLOBAL_QUERY_BUFFER[i].copy_(q)
+                GLOBAL_QUERY_BUFFER[i] = q.clone()
 
         if not get_pp_group().is_last_rank:
             return IntermediateTensors({
