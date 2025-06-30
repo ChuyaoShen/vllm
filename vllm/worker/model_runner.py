@@ -72,6 +72,11 @@ def clean_global_query_sequence_buffer():
     GLOBAL_QUERY_SEQUENCE_BUFFER = []
 
 
+def get_global_query_sequence_buffer():
+    global GLOBAL_QUERY_SEQUENCE_BUFFER
+    return GLOBAL_QUERY_SEQUENCE_BUFFER
+
+
 LORA_WARMUP_RANK = 8
 
 _NUM_WARMUP_ITERS = 2
