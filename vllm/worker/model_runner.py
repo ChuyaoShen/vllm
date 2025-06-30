@@ -1679,7 +1679,7 @@ class ModelRunner(GPUModelRunnerBase[ModelInputForGPUWithSamplingMetadata]):
         global GLOBAL_KV_CACHE_BUFFER
         global GLOBAL_KV_CACHE_METADATA_BUFFER
         GLOBAL_KV_CACHE_BUFFER = kv_caches
-        GLOBAL_KV_CACHE_METADATA_BUFFER = model_input.attn_metadata
+        GLOBAL_KV_CACHE_METADATA_BUFFER = deepcopy(model_input.attn_metadata)
         if num_steps > 1:
             raise ValueError("num_steps > 1 is not supported in ModelRunner")
 
