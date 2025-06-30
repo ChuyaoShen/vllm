@@ -59,6 +59,7 @@ from vllm.worker.model_runner_base import (
     _init_attn_metadata_from_tensor_dict,
     _init_sampling_metadata_from_tensor_dict)
 from vllm.model_executor.models.qwen2 import get_global_query_buffer
+from copy import deepcopy
 
 if TYPE_CHECKING:
     from vllm.attention.backends.abstract import AttentionBackend
@@ -67,7 +68,7 @@ logger = init_logger(__name__)
 
 GLOBAL_QUERY_SEQUENCE_BUFFER = []
 GLOBAL_KV_CACHE_BUFFER = None
-GLOBAL_KV_CACHE_BUCKET_BUFFER = None
+GLOBAL_KV_CACHE_METADATA_BUFFER = None
 
 def clean_global_query_sequence_buffer():
     global GLOBAL_QUERY_SEQUENCE_BUFFER
@@ -1677,6 +1678,7 @@ class ModelRunner(GPUModelRunnerBase[ModelInputForGPUWithSamplingMetadata]):
     ) -> Optional[Union[List[SamplerOutput], IntermediateTensors]]:
         global GLOBAL_KV_CACHE_BUFFER
         GLOBAL_KV_CACHE_BUFFER = kv_caches
+        GLOBAL_KV_CACHE_METADATA_BUFFER = model_input.attn_metadata
         if num_steps > 1:
             raise ValueError("num_steps > 1 is not supported in ModelRunner")
 
