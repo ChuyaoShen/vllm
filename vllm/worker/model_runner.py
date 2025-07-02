@@ -58,7 +58,6 @@ from vllm.worker.model_runner_base import (
     _add_sampling_metadata_broadcastable_dict,
     _init_attn_metadata_from_tensor_dict,
     _init_sampling_metadata_from_tensor_dict)
-from vllm.model_executor.models.qwen2 import get_global_query_buffer
 from copy import deepcopy
 
 if TYPE_CHECKING:
@@ -1768,7 +1767,7 @@ class ModelRunner(GPUModelRunnerBase[ModelInputForGPUWithSamplingMetadata]):
                     **seqlen_agnostic_kwargs,
                     **model_kwargs,
                 )
-                GLOBAL_QUERY_SEQUENCE_BUFFER.append(get_global_query_buffer())
+                print(self.model.language_model.model.query_buffer.mean())
 
         if (self.observability_config is not None
                 and self.observability_config.collect_model_forward_time):

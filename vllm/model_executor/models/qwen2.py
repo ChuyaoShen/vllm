@@ -60,15 +60,6 @@ from .utils import (AutoWeightsLoader, PPMissingLayer, WeightsMapper,
 
 logger = init_logger(__name__)
 
-GLOBAL_QUERY_BUFFER = [
-    torch.nn.Parameter(torch.zeros(1, 3584, dtype=torch.bfloat16), requires_grad=False)
-    for i in range(28)
-]
-
-def get_global_query_buffer():
-    global GLOBAL_QUERY_BUFFER
-    return [buffer.data.clone() for buffer in GLOBAL_QUERY_BUFFER]
-
 
 class Qwen2MLP(nn.Module):
 
@@ -274,7 +265,15 @@ class Qwen2Model(nn.Module):
 
     def __init__(self, *, vllm_config: VllmConfig, prefix: str = ""):
         super().__init__()
-
+        self.register_buffer(
+            'query_buffer',
+            torch.zeros(
+                (28, 1, 3584),
+                dtype=torch.bfloat16,
+                device=torch.cuda.current_device(),
+            ),
+            persistent=False,
+        )
         config = vllm_config.model_config.hf_config
         cache_config = vllm_config.cache_config
         quant_config = vllm_config.quant_config
@@ -349,8 +348,7 @@ class Qwen2Model(nn.Module):
                 hidden_states,
                 residual,
             )
-            with torch.no_grad():
-                GLOBAL_QUERY_BUFFER[i] = q.clone()
+            self.query_buffer[i] = q
 
         if not get_pp_group().is_last_rank:
             return IntermediateTensors({
