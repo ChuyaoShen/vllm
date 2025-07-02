@@ -25,7 +25,6 @@
 """Inference-only Qwen2 model compatible with HuggingFace weights."""
 from typing import Iterable, Optional, Set, Tuple, Union
 
-from copy import deepcopy
 import torch
 from torch import nn
 from transformers import Qwen2Config
@@ -68,7 +67,7 @@ GLOBAL_QUERY_BUFFER = [
 
 def get_global_query_buffer():
     global GLOBAL_QUERY_BUFFER
-    return deepcopy([buffer.data for buffer in GLOBAL_QUERY_BUFFER])
+    return [buffer.data.clone() for buffer in GLOBAL_QUERY_BUFFER]
 
 
 class Qwen2MLP(nn.Module):
