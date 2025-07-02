@@ -1767,7 +1767,7 @@ class ModelRunner(GPUModelRunnerBase[ModelInputForGPUWithSamplingMetadata]):
                     **seqlen_agnostic_kwargs,
                     **model_kwargs,
                 )
-                print(self.model.language_model.model.query_buffer.mean())
+                GLOBAL_QUERY_SEQUENCE_BUFFER.append([layer_query_buffer.clone() for layer_query_buffer in self.model.language_model.model.query_buffer])
 
         if (self.observability_config is not None
                 and self.observability_config.collect_model_forward_time):
